@@ -1,0 +1,18 @@
+#Command to build honeypot_image:
+cd /honeypot
+docker build -t honeypot_image .
+
+#save honeypot_image, and move to manager folder
+docker save honeypot_image > honeypot_image.tar # honepot_image.tar is created and saved in the /honeypot folder and needs to be in the manager folder to be built and pushed
+*copy/paste new tar image to manager folder
+
+# Command to build manager_image
+cd /manager
+docker build -t manager_image .
+
+#Command to start:
+#docker run -d --name manager_container --network honeypot_net --privileged -v /var/run/docker.sock:/var/run/docker.sock -p 2222:2222 -p 5000:5000 manager_image
+# Updated Command to start, from GPT-o1 (because were use port 22 for ssh inside the manager container, adjust mapping)
+docker run -d --name manager_container --network honeypot_net --privileged -v /var/run/docker.sock:/var/run/docker.sock -p 2222:22 -p 5000:5000 manager_image
+
+
