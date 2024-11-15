@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Log Visualization Dashboard</title>
+  <style>
+    /* General Styling */
+    body {
+      background-color: #f9f9f9;
+      color: #333;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    /* Dashboard Container */
+    .dashboard {
+      width: 90%;
+      max-width: 1000px;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Summary Cards */
+    .summary-cards {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .summary-card {
+      flex: 1;
+      padding: 20px;
+      margin: 5px;
+      background-color: #f1f1f1;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .summary-card h2 {
+      font-size: 1.2em;
+      margin: 0;
+      color: #555;
+    }
+    .summary-card p {
+      font-size: 1.8em;
+      margin: 5px 0 0;
+      font-weight: bold;
+      color: #222;
+    }
+
+    /* Command Frequency Section */
+    .chart-section {
+      margin-top: 20px;
+      padding: 20px;
+      background-color: #f1f1f1;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .chart-section h2 {
+      font-size: 1.2em;
+      color: #555;
+    }
+    .chart-placeholder {
+      height: 200px;
+      border: 1px dashed #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #aaa;
+    }
+
+    /* Search Bar Styling */
+    .search-bar {
+      margin: 20px 0;
+    }
+    .search-bar input {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    /* Table Styling */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    th {
+      background-color: #333;
+      color: #fff;
+    }
+    tr:hover {
+      background-color: #f5f5f5;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <h1>Log Visualization Dashboard</h1>
+
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+      <div class="summary-card">
+        <h2>Total Logs</h2>
+        <p id="totalLogs">0</p>
+      </div>
+      <div class="summary-card">
+        <h2>Unique IPs</h2>
+        <p id="uniqueIps">0</p>
+      </div>
+      <div class="summary-card">
+        <h2>Most Common Command</h2>
+        <p id="commonCommand">N/A</p>
+      </div>
+    </div>
+
+    <!-- Command Frequency Chart -->
+    <div class="chart-section">
+      <h2>Command Frequency</h2>
+      <div class="chart-placeholder" id="chartPlaceholder">[Chart Placeholder]</div>
+    </div>
+
+    <!-- Search bar for filtering -->
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Search logs...">
+    </div>
+
+    <!-- Logs Table -->
+    <h2>Log Entries</h2>
+    <table id="logsTable">
+      <thead>
+        <tr>
+          <th>Command</th>
+          <th>IP Address</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Entries will be dynamically added here -->
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    // Function to fetch and display data
+    async function fetchData() {
+      try {
+        const response = await fetch('/logs');
+        const data = await response.json();
+        displayData(data);
+        updateSummary(data);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    }
+
+    // Function to display data in the table
+    function displayData(data) {
+      const tableBody = document.getElementById('logsTable').querySelector('tbody');
+      tableBody.innerHTML = '';
+
+      data.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${item.entry}</td>
+          <td>${item.ip}</td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    // Function to update summary cards
+    function updateSummary(data) {
+      document.getElementById('totalLogs').textContent = data.length;
+
+      const uniqueIps = new Set(data.map(item => item.ip));
+      document.getElementById('uniqueIps').textContent = uniqueIps.size;
+
+      const commandCounts = {};
+      data.forEach(item => {
+        const command = item.entry.split(': ')[1];
+        commandCounts[command] = (commandCounts[command] || 0) + 1;
+      });
+
+      const mostCommonCommand = Object.keys(commandCounts).reduce((a, b) => 
+        commandCounts[a] > commandCounts[b] ? a : b, "N/A"
+      );
+      document.getElementById('commonCommand').textContent = mostCommonCommand;
+    }
+
+    // Search functionality to filter table
+    document.getElementById('searchInput').addEventListener('input', function() {
+      const filter = this.value.toLowerCase();
+      const rows = document.querySelectorAll('#logsTable tbody tr');
+
+      rows.forEach(row => {
+        const command = row.cells[0].textContent.toLowerCase();
+        const ip = row.cells[1].textContent.toLowerCase();
+        row.style.display = (command.includes(filter) || ip.includes(filter)) ? '' : 'none';
+      });
+    });
+
+    // Fetch data initially
+    fetchData();
+  </script>
+</body>
+</html>
